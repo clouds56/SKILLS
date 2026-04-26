@@ -18,10 +18,28 @@ Use this skill when creating or refactoring Tauri 2.0 apps that should stay modu
 5. Ensure icons are ready before first run/build.
 6. Use async command handlers for network and file I/O.
 7. Keep `App.tsx` and `lib.rs` slim; push domain logic into modules.
+8. Keep command invocation wrappers in `src/lib/tauri.ts`.
+9. Keep shared command/model types in `src/lib/types.ts`.
+10. Treat this as a maintainable production app, not a prototype.
+
+## Feature Planning Gate (Required)
+
+Before implementing any new feature, confirm a brief plan that covers all three areas:
+1. Screen plan (UI/UX): target screen(s), interaction flow, and loading/error/empty states.
+2. Command plan: new/changed Tauri commands, async behavior, and event usage for long-running work.
+3. Data model plan: TypeScript types in `src/lib/types.ts`, Rust structs/enums if needed, and mapping between them.
+
+Do not start coding until this plan is explicitly confirmed.
 
 ## Documents
 - Setup and bootstrap checklist: [create.md](./create.md)
+- Scenario guide: [topics/simple-ui.md](./topics/simple-ui.md)
+- Scenario guide: [topics/tooling-app.md](./topics/tooling-app.md)
+- Scenario guide: [topics/data-app.md](./topics/data-app.md)
+- Scenario guide: [topics/job-app.md](./topics/job-app.md)
+- Scenario guide: [topics/workspace-app.md](./topics/workspace-app.md)
 - Scenario guide: [topics/control-panel.md](./topics/control-panel.md)
+- Scenario overlap guide: [topics/scenario-overlap.md](./topics/scenario-overlap.md)
 - Scenario guide: [topics/tasks.md](./topics/tasks.md)
 
 ## Recommended Project Shape
@@ -37,6 +55,8 @@ src/
   components/
     ...reusable UI components...
   lib/
+    tauri.ts
+    types.ts
     state.ts
     ...shared helpers...
 ```
