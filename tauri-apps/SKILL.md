@@ -21,7 +21,8 @@ Use this skill when creating or refactoring Tauri 2.0 apps that should stay modu
 
 ## Documents
 - Setup and bootstrap checklist: [create.md](./create.md)
-- Scenario guides: [topics/control-panel.md](./topics/control-panel.md)
+- Scenario guide: [topics/control-panel.md](./topics/control-panel.md)
+- Scenario guide: [topics/tasks.md](./topics/tasks.md)
 
 ## Recommended Project Shape
 
