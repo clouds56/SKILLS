@@ -35,16 +35,16 @@ Use this minimal capability set when your floating window needs drag support, cl
 
 ```json
 {
-	"$schema": "../gen/schemas/desktop-schema.json",
-	"identifier": "default",
-	"description": "Default capability set for floating window behavior.",
-	"windows": ["main"],
-	"permissions": [
-		"core:default",
-		"core:window:allow-start-dragging",
-		"core:window:allow-close",
-		"opener:default"
-	]
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability set for floating window behavior.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-close",
+    "opener:default"
+  ]
 }
 ```
 
@@ -54,26 +54,26 @@ Use this as a baseline for a transparent floating window on macOS.
 
 ```json
 {
-	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "Floating Utility",
-	"version": "0.1.0",
-	"identifier": "com.example.floating-utility",
-	"app": {
-		"macOSPrivateApi": true,
-		"windows": [
-			{
-				"label": "main",
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Floating Utility",
+  "version": "0.1.0",
+  "identifier": "com.example.floating-utility",
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
         ...
-				"decorations": false,
-				"transparent": true,
-				"alwaysOnTop": true,
-				"resizable": false
-			}
-		],
-		"security": {
-			"capabilities": ["default"]
-		}
-	}
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "resizable": false
+      }
+    ],
+    "security": {
+      "capabilities": ["default"]
+    }
+  }
 }
 ```
 
