@@ -9,7 +9,7 @@ Examples: sticky note, mini translator, capture overlay.
 1. Treat the floating window as a focused micro-surface, not a full workspace shell.
 2. Keep startup fast and memory footprint low.
 3. Default window style to undecorated and transparent, with a light gray content background for readability.
-4. Default drag behavior to whole-window drag unless interaction conflicts require handle-only drag.
+4. Default drag behavior to whole-window drag only for non-text utility surfaces; switch to handle-only drag when content needs selection or text input.
 5. Keep command wrappers in `src/lib/tauri.ts` and shared payload/result types in `src/lib/types.ts`.
 6. Keep state minimal and predictable; prefer local state unless persistence is clearly needed.
 
@@ -17,7 +17,7 @@ Examples: sticky note, mini translator, capture overlay.
 
 1. Default to undecorated windows; only enable decorations when a platform-specific usability issue requires it.
 2. Default to transparent windows with a light gray background layer inside the content area.
-3. Default drag behavior to whole-window drag and carve out interactive regions deliberately.
+3. Keep drag behavior explicit and mutually exclusive: whole-window drag mode or header-handle drag mode.
 4. Keep resize policy explicit: fixed size, bounded resize, or content-driven resize.
 5. Validate always-on-top, focus behavior, and tray restoration paths.
 
@@ -81,12 +81,15 @@ Also enable the `macOSPrivateApi` feature for `tauri` in `src-tauri/Cargo.toml` 
 
 ## Drag, Drop, And Resize Guidance
 
-1. Differentiate window dragging from inner content dragging to avoid gesture conflicts.
-2. For whole-window drag behavior, permission `core:window:allow-start-dragging` is a MUST.
-3. Define drag-and-drop zones and reject states clearly.
-4. Throttle resize/reflow loops when window size follows inner content.
-5. Set min/max window bounds to avoid unusable micro or oversized states.
-6. Recompute layout safely when content expands or collapses dynamically.
+1. Use one of two drag modes only:
+2. Whole-window drag mode: make the complete content surface draggable, disable text selection (`user-select: none`), and avoid inline text-entry controls in that surface.
+3. Header-handle drag mode: keep the app window undecorated (`decorations: false`) and provide a custom in-app header/handle that calls `startDragging()`.
+4. Prefer calling `startDragging()` from your drag handle interaction instead of relying on `data-tauri-drag-region`, which is less reliable across app states and layouts.
+5. For either drag mode, permission `core:window:allow-start-dragging` is a MUST.
+6. Define drag-and-drop zones and reject states clearly.
+7. Throttle resize/reflow loops when window size follows inner content.
+8. Set min/max window bounds to avoid unusable micro or oversized states.
+9. Recompute layout safely when content expands or collapses dynamically.
 
 ## Inner Content Interaction Guidance
 
