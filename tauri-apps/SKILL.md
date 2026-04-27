@@ -39,6 +39,7 @@ Do not start coding until this plan is explicitly confirmed.
 - Scenario guide: [topics/job-app.md](./topics/job-app.md)
 - Scenario guide: [topics/workspace-app.md](./topics/workspace-app.md)
 - Scenario guide: [topics/control-panel.md](./topics/control-panel.md)
+- Scenario guide: [topics/floating-window.md](./topics/floating-window.md)
 - Scenario overlap guide: [topics/scenario-overlap.md](./topics/scenario-overlap.md)
 - Scenario guide: [topics/tasks.md](./topics/tasks.md)
 
