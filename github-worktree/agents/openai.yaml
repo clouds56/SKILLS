@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Worktree"
+  short_description: "Manage worktree PR workflows with gh"
+  default_prompt: "Use $github-worktree to start or maintain a GitHub PR from this worktree."
