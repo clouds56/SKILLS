@@ -7,6 +7,8 @@ description: Manage GitHub PR workflows from a git worktree with `gh` and `git`.
 
 Use this skill to manage branch, commit, push, and PR flow from the current git worktree without losing track of ownership.
 
+For any question to the user about repository, branch, PR, commit, push, or git state, use the ask/question tool instead of a plain chat question.
+
 ## Workflow
 
 ### Useful command patterns
@@ -51,7 +53,7 @@ gh pr edit --title "fix: correct Y" --body-file /tmp/pr-body.md
 
 ### 1. Inspect repository and worktree state
 
-Inspect repository state before asking any PR questions.
+Inspect repository state before asking any PR questions through the ask/question tool.
 
 Check:
 - Current branch name.
@@ -62,11 +64,18 @@ Check:
 - Repository root.
 - GitHub CLI availability and auth state when PR work is requested.
 
+If `git branch --show-current` returns an empty string, treat the checkout as a detached HEAD.
+In that case:
+- Do not look for PRs on the empty branch name.
+- Resolve the repository default branch first.
+- Use the first PR question through the ask/question tool to ask which new branch name to create.
+- After the user answers, run `git fetch origin`, reset the worktree to `origin/<default-branch>`, and create the requested branch before continuing PR setup.
+
 If the directory is not a worktree checkout, say so plainly and continue only if the user still wants normal branch-based PR handling.
 
-If any PR exists for the branch:
+If HEAD is attached to a branch and any PR exists for that branch:
 - Show the PR number, state, title, and URL.
-- Ask the user what to do next.
+- Ask what to do next through the ask/question tool.
 - Do not silently create a replacement PR.
 
 Typical user choices:
@@ -76,10 +85,22 @@ Typical user choices:
 
 ### 2. Ask the three PR questions
 
-When the user says "start a PR" or equivalent, ask these three questions before creating anything:
+When the user says "start a PR" or equivalent, ask these three questions through the ask/question tool before creating anything.
+
+If HEAD is attached to a branch, ask:
 - Which branch should merge into which branch. If the target branch is not specified, resolve the repository default branch first with `gh repo view --json nameWithOwner,defaultBranchRef` and confirm against that.
 - Whether commit management is `user` or `agent`.
 - The PR title, formatted as a Conventional Commits subject such as `feat: add X`, `fix: correct Y`, or `test: cover Z`.
+
+If HEAD is detached, replace the first question with:
+- What branch name should be created from `origin/<default-branch>` for this PR.
+
+Then:
+- Reset the worktree to `origin/<default-branch>`.
+- Create and check out the requested branch.
+- Continue with the remaining two questions.
+
+After branch creation in detached-head mode, treat the merge target as the repository default branch unless the user explicitly asks for a different base branch.
 
 Treat confirmation of the PR title as permission to create the PR.
 
@@ -99,6 +120,8 @@ Handle that constraint as follows:
 - Push the branch to the remote.
 - Create the PR with `gh pr create` using the confirmed title, the current branch as head, and the confirmed target branch as base.
 - Use a concise placeholder PR body if a fuller description is not available yet.
+
+In detached-head mode, finish the branch recreation flow before checking divergence or creating the bootstrap commit. The bootstrap commit must happen on the newly created branch, not on the detached commit.
 
 This bootstrap commit is allowed under both ownership modes only for starting the PR.
 
@@ -165,7 +188,9 @@ After any PR-related action, report:
 ## Guardrails
 
 - Do not create a PR before checking for existing open or closed PRs on the branch.
-- Do not assume the agent may commit. Ask first.
+- Do not ask repo, PR, or git-related questions in plain chat. Use the ask/question tool.
+- Do not treat a detached HEAD as a usable branch name. Ask for a branch name first through the ask/question tool, then reset to `origin/<default-branch>` and create that branch before PR creation.
+- Do not assume the agent may commit before commit ownership is established. Use the ask/question tool to establish ownership first, then follow it: `agent` means the agent should commit and push as needed for normal progress, while `user` means normal commits stay user-managed.
 - Do not create or push normal work commits under `user` ownership without explicit permission; only the bootstrap empty commit for initial PR creation is allowed.
 - Do not ask again for commit or push permission after the user has chosen `agent` ownership.
 - Do not skip writing `.github/_pr_/status.json` after PR stub creation.
