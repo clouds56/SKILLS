@@ -9,37 +9,60 @@ Use this skill to manage branch, commit, push, and PR flow from the current git 
 
 ## Workflow
 
-### 1. Confirm worktree context
+### Useful command patterns
 
-Verify that the current directory is a git worktree before discussing PR creation.
+Use these as examples and adapt flags to the repository state.
+
+```bash
+# confirm worktree and branch context
+git worktree list
+git branch --show-current
+git rev-parse --show-toplevel
+
+# check gh availability and auth
+gh --version
+gh auth status
+
+# inspect repo owner/name and default branch
+gh repo view --json nameWithOwner,defaultBranchRef
+
+# check whether the current branch already has any PR, including closed ones
+branch="$(git branch --show-current)"
+gh pr list --head "$branch" --state all
+
+# check whether the branch already differs from the chosen base
+git rev-list --left-right --count origin/main..."$branch"
+
+# create the bootstrap commit when branch divergence is required
+git commit --allow-empty -m "chore: bootstrap PR"
+
+# push the current branch
+git push -u origin "$branch"
+
+# create a draft PR stub
+gh pr create --draft --base main --head "$branch" --title "feat: add X" --body-file /tmp/pr-body.md
+
+# persist PR status after PR creation
+python3 scripts/write_pr_status.py
+
+# update PR title and description later
+gh pr edit --title "fix: correct Y" --body-file /tmp/pr-body.md
+```
+
+### 1. Inspect repository and worktree state
+
+Inspect repository state before asking any PR questions.
 
 Check:
 - Current branch name.
+- Repository default branch, using `gh repo view --json nameWithOwner,defaultBranchRef`.
+- Repository name.
+- Existing PR status for the current branch, including closed PRs.
 - Current worktree path.
 - Repository root.
 - GitHub CLI availability and auth state when PR work is requested.
 
 If the directory is not a worktree checkout, say so plainly and continue only if the user still wants normal branch-based PR handling.
-
-### 2. Clarify the PR request
-
-When the user says "start a PR" or equivalent, ask only the missing questions needed to proceed:
-- Target base branch.
-- PR title, formatted as a Conventional Commits subject such as `feat: add X`, `fix: correct Y`, or `test: cover Z`.
-- PR description or the points that should be included in it.
-- Whether commit management is `user` or `agent`.
-
-Always ask who manages commits.
-
-Interpret the answer as:
-- `user`: The user owns normal commit boundaries and commit content. The agent must not create or push normal work commits without an explicit follow-up request, but may create a single empty bootstrap commit when needed to open the PR stub.
-- `agent`: The agent owns normal commit boundaries, may create bootstrap commits when needed, and may push to the remote branch as part of normal progress.
-
-### 3. Check whether the branch already has a PR
-
-Before creating a new PR, check whether the current branch already has any remote PRs, including closed PRs.
-
-Use `gh` in a way that includes all states, not only open PRs.
 
 If any PR exists for the branch:
 - Show the PR number, state, title, and URL.
@@ -51,36 +74,58 @@ Typical user choices:
 - Reopen or supersede a closed PR.
 - Create a fresh branch and new PR.
 
-### 4. Create an empty PR stub
+### 2. Ask the three PR questions
 
-If no PR exists and the user wants to start the PR before implementation, create an empty PR stub after the title and description are clear.
+When the user says "start a PR" or equivalent, ask these three questions before creating anything:
+- Which branch should merge into which branch. If the target branch is not specified, resolve the repository default branch first with `gh repo view --json nameWithOwner,defaultBranchRef` and confirm against that.
+- Whether commit management is `user` or `agent`.
+- The PR title, formatted as a Conventional Commits subject such as `feat: add X`, `fix: correct Y`, or `test: cover Z`.
+
+Treat confirmation of the PR title as permission to create the PR.
+
+Interpret the answer as:
+- `user`: The user owns normal commit boundaries and commit content. The agent must not create or push normal work commits without an explicit follow-up request, but may create a single empty bootstrap commit when needed to open the PR stub.
+- `agent`: The agent owns normal commit boundaries, may create bootstrap commits when needed, and may push to the remote branch as part of normal progress without asking again for commit or push permission.
+
+### 3. Create an empty PR stub
+
+If no PR exists and the user wants to start the PR before implementation, create an empty PR stub after the three questions are answered and the PR title is confirmed.
 
 Important constraint:
 - GitHub cannot open a PR from a branch with no divergence from base.
 
 Handle that constraint as follows:
-- If commits are `agent` managed and the branch has no unique commits, create an empty bootstrap commit with `git commit --allow-empty`.
+- Create an empty bootstrap commit with `git commit --allow-empty`.
 - Push the branch to the remote.
-- Create the PR with `gh pr create` using the agreed title, body, head branch, and base branch.
+- Create the PR with `gh pr create` using the confirmed title, the current branch as head, and the confirmed target branch as base.
+- Use a concise placeholder PR body if a fuller description is not available yet.
 
-If commits are `user` managed and the branch has no unique commits:
-- Explain that a placeholder PR still needs branch divergence.
-- Create a single empty bootstrap commit only for PR creation.
-- Push the branch and create the PR stub.
-- Do not treat that bootstrap commit as permission to manage later commits.
+This bootstrap commit is allowed under both ownership modes only for starting the PR.
 
 Prefer a draft PR unless the user explicitly asks for a ready-for-review PR.
 
-After creating the PR stub, continue with the actual work instead of stopping at PR creation:
-- If the problem is not yet understood, start investigating.
-- If the task needs up-front structure, produce or confirm a plan.
-- If the next implementation step is already clear, proceed directly.
+### 4. Persist PR status
 
-### 5. Manage commits and pushes
+Immediately after creating the PR stub, write `.github/_pr_/status.json` and `.github/_pr_/.gitignore`.
+
+Use `scripts/write_pr_status.py` to:
+- Discover the current branch.
+- Discover the repository name and default branch.
+- Discover PR state for the current branch.
+- Create `.github/_pr_/.gitignore` containing only `*`.
+- Write `.github/_pr_/status.json` with the discovered data.
+
+### 5. Start the plan
+
+After the PR stub exists and the status file is written, start the plan for the actual work.
+
+### 6. Manage commits and pushes
 
 If commit ownership is `agent`:
 - Commit logically grouped changes when the work reaches a stable checkpoint.
 - Push after commits when remote state should stay in sync.
+- Do not ask again for permission to commit or push once ownership is `agent`.
+- If a bootstrap empty commit was used to open the PR stub, amend that dummy commit with the first actual work instead of creating a second initial commit.
 - Use clear commit messages tied to the work being performed.
 
 If commit ownership is `user`:
@@ -89,7 +134,7 @@ If commit ownership is `user`:
 - Allow one exception: create and push a single empty bootstrap commit if branch divergence is required to open the initial PR stub.
 - After the PR stub exists, return to user-managed commit boundaries unless the user changes ownership.
 
-### 6. Keep the PR description current
+### 7. Keep the PR description current
 
 When the agent pushes new work, or when the user asks to update the PR text, refresh the PR title and description to match the current scope.
 
@@ -106,10 +151,12 @@ Keep PR descriptions concise and operational:
 
 Keep the PR title aligned with Conventional Commits semantics when the scope changes enough that the original type or summary is no longer accurate.
 
-### 7. Report state clearly
+### 8. Report state clearly
 
 After any PR-related action, report:
 - Branch name.
+- Default branch.
+- Repository name.
 - Whether the branch was pushed.
 - Whether a PR already existed or was created.
 - PR number and URL when available.
@@ -120,6 +167,8 @@ After any PR-related action, report:
 - Do not create a PR before checking for existing open or closed PRs on the branch.
 - Do not assume the agent may commit. Ask first.
 - Do not create or push normal work commits under `user` ownership without explicit permission; only the bootstrap empty commit for initial PR creation is allowed.
+- Do not ask again for commit or push permission after the user has chosen `agent` ownership.
+- Do not skip writing `.github/_pr_/status.json` after PR stub creation.
 - Do not leave the PR description stale after agent-driven pushes when the summary has changed.
 - Do not use arbitrary PR titles; use a Conventional Commits type and concise subject.
 - Do not hide GitHub constraints around empty PRs; explain the need for at least one unique commit.
