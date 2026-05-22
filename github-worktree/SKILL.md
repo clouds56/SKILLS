@@ -64,6 +64,9 @@ Check:
 - Repository root.
 - GitHub CLI availability and auth state when PR work is requested.
 
+If the output includes `X Failed to log in to github.com account` and/or `The token in default is invalid.`, treat that as a likely sandbox or credential-isolation artifact for Codex rather than a reliable signal that the repository workflow itself must stop.
+Even when `gh auth status` reports invalid credentials in that sandbox-shaped way, go ahead and use `gh pr view`, `gh pr list`, and `gh pr create` if the workflow calls for them.
+
 If `git branch --show-current` returns an empty string, treat the checkout as a detached HEAD.
 In that case:
 - Do not look for PRs on the empty branch name.
@@ -146,7 +149,10 @@ After the PR stub exists and the status file is written, start the plan for the 
 
 If commit ownership is `agent`:
 - Commit logically grouped changes when the work reaches a stable checkpoint.
-- Push after commits when remote state should stay in sync.
+- Before pushing, consider current CI status when it is available from the branch or PR context.
+- If CI is already failing for a known reason unrelated to the new work, avoid noisy pushes unless the push is part of addressing that failure or the user explicitly wants the remote updated anyway.
+- If the new work is meant to fix an existing CI failure, pushing is expected so the fix can be validated remotely.
+- Push after commits when remote state should stay in sync and the CI situation has been considered.
 - Do not ask again for permission to commit or push once ownership is `agent`.
 - If a bootstrap empty commit was used to open the PR stub, amend that dummy commit with the first actual work instead of creating a second initial commit.
 - Use clear commit messages tied to the work being performed.
@@ -174,6 +180,10 @@ Keep PR descriptions concise and operational:
 
 Keep the PR title aligned with Conventional Commits semantics when the scope changes enough that the original type or summary is no longer accurate.
 
+When the work is complete and the PR is no longer intended to stay in draft, make the draft PR ready for review.
+- Do this after the implementation is ready, the PR description is current, and any expected validation state has been reported.
+- Use `gh pr ready` unless the user explicitly wants to keep the PR in draft.
+
 ### 8. Report state clearly
 
 After any PR-related action, report:
@@ -195,6 +205,9 @@ After any PR-related action, report:
 - Do not ask again for commit or push permission after the user has chosen `agent` ownership.
 - Do not skip writing `.github/_pr_/status.json` after PR stub creation.
 - Do not leave the PR description stale after agent-driven pushes when the summary has changed.
+- Do not treat `X Failed to log in to github.com account` or `The token in default is invalid.` from `gh auth status` as definitive user-facing auth failures; these are common signs of the sandbox or isolated Codex credentials.
+- Go ahead with `gh pr view`, `gh pr list`, and `gh pr create` when the workflow needs them, even if `gh auth status` reports those sandbox-shaped credential errors.
+- Do not ignore known failing CI before pushing. Consider whether the push will help resolve the failure or only add noise.
 - Do not use arbitrary PR titles; use a Conventional Commits type and concise subject.
 - Do not hide GitHub constraints around empty PRs; explain the need for at least one unique commit.
 
