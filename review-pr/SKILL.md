@@ -14,7 +14,7 @@ Lead with concrete findings. Prioritize:
 - **Correctness and corner cases**: behavior changes, edge cases, error paths, concurrency, data loss, migrations, security, permissions, compatibility, and rollback risks.
 - **Design quality**: whether the change fits existing architecture, ownership boundaries, naming, data flow, APIs, abstractions, and failure handling.
 - **Code cleanliness**: readability, maintainability, duplication, unnecessary complexity, dead code, local style, and consistency with nearby code.
-- **Test coverage**: whether tests cover the changed behavior, negative cases, integration points, and important regressions.
+- **Test coverage**: whether tests cover the changed behavior, negative cases, integration points, and important regressions. Inspect changed tests and CI signals; do not run local test commands.
 
 Avoid praising routine code. Do not list non-blocking style preferences unless they affect maintainability or future defects.
 
@@ -35,7 +35,7 @@ Create a project-local review workspace:
 .review-pr/<pr-number>/<base-sha>-<head-sha>/base
 ```
 
-The `base` worktree is optional. Create it only when you need to reproduce base behavior, compare generated output, or run base tests.
+The `base` worktree is optional. Create it only when you need to read base files or compare source content. Do not build or test either worktree.
 
 Fetch refs as needed, then create the head worktree detached at the exact PR head commit:
 
@@ -74,11 +74,11 @@ Do not rely on GitHub-rendered patches as the primary source once the local chec
 1. Inspect PR metadata and create the detached review workspace.
 2. Read the changed-file list and classify the blast radius.
 3. Inspect diffs and surrounding code for correctness, design, cleanliness, tests, and corner cases.
-4. Run targeted validation when practical. Prefer existing project commands and tests over invented checks.
-5. If tests are missing or too narrow, identify the specific uncovered behavior.
+4. Inspect CI/check status for build and test signals, using commands such as `gh pr checks <pr>` or `gh run view` when available.
+5. If tests are missing, too narrow, not covered by CI, failing, stale, or unavailable, identify the specific review risk.
 6. Report findings first, ordered by severity, with file and line references.
 
-When test commands are expensive, unavailable, or require network access, state what was and was not run.
+Do not execute project code in the review checkout. Do not build, test, install dependencies, generate artifacts, run formatters, update snapshots, or run project scripts. The checkout is for reading files and local git inspection only.
 
 ## Output Format
 
@@ -98,6 +98,7 @@ If there are no findings, say so clearly and mention any residual test or covera
 - Do not modify the PR checkout unless the user explicitly asks for fixes.
 - Do not modify the user's active worktree.
 - Do not create, switch to, or update local branches for the PR head.
+- Do not build, test, install, format, generate artifacts, or otherwise execute the project in the review checkout.
 - Do not treat generated or vendored diffs as primary review material unless the PR changes that source of truth.
 - Do not let formatting or style comments crowd out correctness, design, tests, or corner cases.
-- Do not claim tests passed unless the command completed successfully in the relevant review workspace.
+- Do not claim tests passed locally. Report CI status when available, and state when CI could not be inspected.
