@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review PR"
+  short_description: "Review GitHub PRs from a clean worktree"
+  default_prompt: "Use $review-pr to review this GitHub pull request for correctness, design, cleanliness, tests, and corner cases."
