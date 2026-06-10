@@ -1,0 +1,4 @@
+interface:
+  display_name: "Talk First"
+  short_description: "Align critically before acting."
+  default_prompt: "talk: help me align on this before making changes."
