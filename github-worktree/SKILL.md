@@ -149,12 +149,13 @@ After the PR stub exists and the status file is written, start the plan for the 
 
 If commit ownership is `agent`:
 - Commit logically grouped changes when the work reaches a stable checkpoint.
+- Since PRs are squash-merged, do not try to keep the branch as one coherent commit. Prefer reviewable working commits and let the squash merge create the final single commit.
 - Before pushing, consider current CI status when it is available from the branch or PR context.
 - If CI is already failing for a known reason unrelated to the new work, avoid noisy pushes unless the push is part of addressing that failure or the user explicitly wants the remote updated anyway.
 - If the new work is meant to fix an existing CI failure, pushing is expected so the fix can be validated remotely.
 - Push after commits when remote state should stay in sync and the CI situation has been considered.
 - Do not ask again for permission to commit or push once ownership is `agent`.
-- If a bootstrap empty commit was used to open the PR stub, amend that dummy commit with the first actual work instead of creating a second initial commit.
+- If a bootstrap empty commit was used to open the PR stub, it may be amended into the first actual work commit or left in history until the PR is squash-merged. Choose the simpler path for the current state.
 - Use clear commit messages tied to the work being performed.
 
 If commit ownership is `user`:
