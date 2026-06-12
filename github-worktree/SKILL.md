@@ -41,14 +41,17 @@ git commit --allow-empty -m "chore: bootstrap PR"
 # push the current branch
 git push -u origin "$branch"
 
+# prepare the PR metadata directory before writing a PR body file
+mkdir -p .github/_pr_
+
 # create a draft PR stub
-gh pr create --draft --base main --head "$branch" --title "feat: add X" --body-file /tmp/pr-body.md
+gh pr create --draft --base main --head "$branch" --title "feat: add X" --body-file .github/_pr_/body.md
 
 # persist PR status after PR creation
 python3 scripts/write_pr_status.py
 
 # update PR title and description later
-gh pr edit --title "fix: correct Y" --body-file /tmp/pr-body.md
+gh pr edit --title "fix: correct Y" --body-file .github/_pr_/body.md
 ```
 
 ### 1. Inspect repository and worktree state
@@ -179,6 +182,8 @@ Keep PR descriptions concise and operational:
 - Testing or validation status.
 - Any open questions or follow-ups.
 
+If a PR body file must be written, write it to `.github/_pr_/body.md`. Do not write PR body markdown to `/tmp`.
+
 Keep the PR title aligned with Conventional Commits semantics when the scope changes enough that the original type or summary is no longer accurate.
 
 When the work is complete and the PR is no longer intended to stay in draft, make the draft PR ready for review.
@@ -206,6 +211,7 @@ After any PR-related action, report:
 - Do not ask again for commit or push permission after the user has chosen `agent` ownership.
 - Do not skip writing `.github/_pr_/status.json` after PR stub creation.
 - Do not leave the PR description stale after agent-driven pushes when the summary has changed.
+- Do not write PR body markdown to `/tmp`; use `.github/_pr_/body.md`.
 - Do not treat `X Failed to log in to github.com account` or `The token in default is invalid.` from `gh auth status` as definitive user-facing auth failures; these are common signs of the sandbox or isolated Codex credentials.
 - Go ahead with `gh pr view`, `gh pr list`, and `gh pr create` when the workflow needs them, even if `gh auth status` reports those sandbox-shaped credential errors.
 - Do not ignore known failing CI before pushing. Consider whether the push will help resolve the failure or only add noise.
