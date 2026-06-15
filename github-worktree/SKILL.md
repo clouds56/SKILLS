@@ -153,6 +153,7 @@ After the PR stub exists and the status file is written, start the plan for the 
 If commit ownership is `agent`:
 - Commit logically grouped changes when the work reaches a stable checkpoint.
 - Since PRs are squash-merged, do not try to keep the branch as one coherent commit. Prefer reviewable working commits and let the squash merge create the final single commit.
+- Do not force-push or rewrite branch history just to make the PR look like one commit; squash merge owns that final commit shape.
 - Before pushing, consider current CI status when it is available from the branch or PR context.
 - If CI is already failing for a known reason unrelated to the new work, avoid noisy pushes unless the push is part of addressing that failure or the user explicitly wants the remote updated anyway.
 - If the new work is meant to fix an existing CI failure, pushing is expected so the fix can be validated remotely.
@@ -209,6 +210,7 @@ After any PR-related action, report:
 - Do not assume the agent may commit before commit ownership is established. Use the ask/question tool to establish ownership first, then follow it: `agent` means the agent should commit and push as needed for normal progress, while `user` means normal commits stay user-managed.
 - Do not create or push normal work commits under `user` ownership without explicit permission; only the bootstrap empty commit for initial PR creation is allowed.
 - Do not ask again for commit or push permission after the user has chosen `agent` ownership.
+- Do not force-push or rewrite branch history to collapse agent-managed work into one PR commit. Prefer normal pushes and rely on squash merge for the final single commit.
 - Do not skip writing `.github/_pr_/status.json` after PR stub creation.
 - Do not leave the PR description stale after agent-driven pushes when the summary has changed.
 - Do not write PR body markdown to `/tmp`; use `.github/_pr_/body.md`.
